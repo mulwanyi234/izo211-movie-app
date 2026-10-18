@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IZO211 MOVIE APP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: #0b0c10; color: #ffffff; padding: 20px; padding-bottom: 40px; }
+        header { text-align: center; margin-bottom: 25px; padding-top: 10px; }
+        h1 { color: #1f2833; font-size: 2rem; letter-spacing: 1px; text-transform: uppercase; background: linear-gradient(45deg, #00ffff, #0080ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
+        .search-box { width: 100%; padding: 15px; border: none; border-radius: 25px; background-color: #1f2833; color: white; font-size: 1rem; margin-bottom: 25px; outline: none; box-shadow: 0 4px 15px rgba(0,255,255,0.1); }
+        .section-title { font-size: 1.1rem; margin-bottom: 15px; color: #66fcf1; text-transform: uppercase; letter-spacing: 1px; }
+        .movie-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .movie-card { background-color: #1f2833; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.5); position: relative; }
+        .movie-poster { width: 100%; height: 240px; object-fit: cover; background-color: #15161c; display: block; }
+        .movie-info { padding: 12px; }
+        .movie-title { font-size: 0.95rem; font-weight: bold; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .movie-rating { color: #66fcf1; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>IZO211 MOVIE APP</h1>
+    </header>
+
+    <input type="text" id="search" class="search-box" placeholder="Search movies on IZO211...">
+
+    <h2 class="section-title" id="grid-title">Trending Now</h2>
+    
+    <div class="movie-grid" id="movie-grid">
+        <!-- Movies load here dynamically -->
+    </div>
+
+    <script>
+        // STEP 1: PASTE YOUR MASSIVE, LONG v4 READ-ONLY ACCESS TOKEN HERE
+        const ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2MDhmN2RkMTFkMjg4NjA3NGVjMzUzNjY1NTU5ZjI4NSIsIm5iZiI6MTc5MjI1MDkzMS4yMTcsInN1YiI6IjZhZDM5NDMzOTBiZmNkMDkxZjFkMzU0OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.fiSp1-Wjgzv2uDnR9KH3vwxDK2sEwb97W5bfUYQQdBI';
+        
+        // Base API endpoints (v3 data endpoints via secure v4 headers)
+        const TMDB_TRENDING_URL = 'https://themoviedb.org';
+        const TMDB_SEARCH_URL = 'https://themoviedb.org';
+        const IMAGE_PATH = 'https://tmdb.org';
+        
+        const grid = document.getElementById('movie-grid');
+        const searchInput = document.getElementById('search');
+        const gridTitle = document.getElementById('grid-title');
+
+        // Fetching data securely using Bearer headers
+        async function getMovies(url) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        accept: 'application/json',
+                        Authorization: `Bearer ${ACCESS_TOKEN}`
+                    }
+                });
+                const data = await response.json();
+                if(data.results && data.results.length > 0) {
+                    displayMovies(data.results);
+                } else {
+                    grid.innerHTML = '<p style="padding:20px; grid-column: span 2; text-align:center;">No movies found.</p>';
+                }
+            } catch (error) {
+                grid.innerHTML = '<p style="padding:20px; grid-column: span 2; text-align:center; color:#ff3333;">Connection error. Try using standard mobile Chrome/Safari with Ad-blockers turned off!</p>';
+            }
+        }
+
+        function displayMovies(movies) {
+            grid.innerHTML = '';
+            movies.forEach(movie => {
+                if(!movie.poster_path) return;
+                
+                const movieCard = document.createElement('div');
+                movieCard.classList.add('movie-card');
+                movieCard.innerHTML = `
+                    <img class="movie-poster" src="${IMAGE_PATH}${movie.poster_path}" alt="${movie.title}">
+                    <div class="movie-info">
+                        <div class="movie-title">${movie.title}</div>
+                        <div class="movie-rating">★ ${movie.vote_average ? movie.vote_average.toFixed(1) : '0.0'}</div>
+                    </div>
+                `;
+                grid.appendChild(movieCard);
+            });
+        }
+
+        searchInput.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                const query = searchInput.value.trim();
+                if(query) {
+                    gridTitle.innerText = `Results for: "${query}"`;
+                    getMovies(`${TMDB_SEARCH_URL}${encodeURIComponent(query)}`);
+                } else {
+                    gridTitle.innerText = "Trending Now";
+                    getMovies(TMDB_TRENDING_URL);
+                }
+            }
+        });
+
+        // Initialize App
+        if(ACCESS_TOKEN !== 'PASTE_YOUR_TMDB_V4_TOKEN_HERE') {
+            getMovies(TMDB_TRENDING_URL);
+        } else {
+            grid.innerHTML = '<p style="padding:20px; grid-column: span 2; text-align:center; color:#ff3333;">Please replace placeholder with your massive v4 Access Token on line 37.</p>';
+        }
+    </script>
+</body>
+</html>
